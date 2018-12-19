@@ -1,0 +1,32 @@
+{
+  "name": "scilla-data-parser",
+  "version": "0.0.1",
+  "description": "Scilla data types can be very verbose, making it hard for developers to use the state directly. The parser will help developers can make references and manipulation to state more easily.",
+  "main": "dist/parser.js",  
+  "types": "dist/parser.d.ts",
+  "directories": {    
+    "src": "src"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paladinlll/scilla-data-parser.git"
+  },
+  "keywords": [
+    "scilla",
+    "data",
+    "parser"
+  ],
+  "author": "paladinlll",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/paladinlll/scilla-data-parser/issues"
+  },
+  "homepage": "https://github.com/paladinlll/scilla-data-parser#readme",
+  "dependencies": {
+    "bn.js": "^4.11.8"
+  }
+}
