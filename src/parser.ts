@@ -32,7 +32,7 @@ function parseTypeTree(strType: string): INodeType {
   while (i < strType.length) {
     switch (strType[i]) {
       case '(':
-        typeStack.push({});
+        typeStack.push({type: '', childTypes: []});
         if (typeCtx != null) {
           if (typeCtx.type == '') {
             typeCtx.type = subType;
