@@ -1,12 +1,19 @@
 {
   "name": "scilla-data-parser",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "Scilla data types can be very verbose, making it hard for developers to use the state directly. The parser will help developers can make references and manipulation to state more easily.",
   "main": "dist/parser.js",
   "types": "dist/parser.d.ts",
   "directories": {
     "src": "src"
   },
+  "files": [
+    "src/",
+	"dist/",
+	".prettierrc",
+	"jestconfig.json",
+	"tsconfig.json"
+  ],
   "scripts": {
     "test": "jest --config jestconfig.json",
     "build": "tsc",
@@ -34,7 +41,9 @@
   },
   "homepage": "https://github.com/paladinlll/scilla-data-parser#readme",
   "dependencies": {
-    "bn.js": "^4.11.8",
+    "bn.js": "^4.11.8"
+  },
+   "devDependencies": {
     "@types/jest": "^22.2.3",
     "codecov": "^3.1.0",
     "jest": "^23.6.0",
