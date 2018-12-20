@@ -1,10 +1,16 @@
-import BN from 'bn.js';
+import {BN} from 'bn.js';
+
+interface INodeType {
+  type: string;
+  childTypes: INodeType[];
+}
 
 function isObject(a: any): boolean {
   return !!a && a.constructor === Object;
 }
 
-function isZilliqaData(node: any): boolean {
+// Check a object is in scilla data format
+function isScillaData(node: any): boolean {
   if (!isObject(node)) return false;
   if ('vname' in node && 'type' in node && 'value' in node) {
     return true;
@@ -12,17 +18,7 @@ function isZilliqaData(node: any): boolean {
   return false;
 }
 
-interface INodeType {
-  type: string;
-  childTypes: INodeType[];
-}
-
-interface IScillaData {
-  vname: string;
-  type: string;
-  value: any;
-}
-
+//With the type field in scilla object, parse it to a tree.
 function parseTypeTree(strType: string): INodeType {
   var typeStack = [];
   var typeCtx = { type: '', childTypes: [] };
@@ -66,12 +62,14 @@ function parseTypeTree(strType: string): INodeType {
     ++i;
   }
 
-  if (!('type' in typeStack[0])) {
+  //In case root node has no child the node type is the input string.	
+  if (typeStack[0].childTypes.length == 0) {
     typeStack[0].type = strType;
   }
   return typeStack[0];
 }
 
+//Convert INodeType to string type.
 function getTypeString(typeCtx: INodeType): string {
   var ret = typeCtx.type;
   if (typeCtx.childTypes.length == 0) {
@@ -104,23 +102,27 @@ function toSimpleData(node: any): any {
       ret[vname] = value;
       break;
     case 'Option':
-      if (value['constructor'] == 'Some') {
-        var op = toSimpleData({
-          vname: 'op',
-          type: getTypeString(typeTree.childTypes[0]),
-          value: value.arguments[0],
-        });
+      if(typeTree.childTypes.length == 1){
+        if (value['constructor'] == 'Some') {
+          var op = toSimpleData({
+            vname: 'op',
+            type: getTypeString(typeTree.childTypes[0]),
+            value: value.arguments[0],
+          });
 
-        ret[vname] = op.op;
-      } else {
-        ret[vname] = '';
+          ret[vname] = op.op;
+        } else {
+          ret[vname] = '';
+        }
+      } else{
+        throw new TypeError('Invalid Option node');
       }
       break;
     case 'Map': {
       ret[vname] = {};
 
       var childs = value;
-      if (Array.isArray(childs)) {
+      if (Array.isArray(childs) && typeTree.childTypes.length == 2) {
         for (var c of childs) {
           var key = toSimpleData({
             vname: 'key',
@@ -137,14 +139,14 @@ function toSimpleData(node: any): any {
           ret[vname][key.key] = val.val;
         }
       } else {
-        throw new TypeError('Map item must is an array');
+        throw new TypeError('Invalid Map node');
       }
       break;
     }
     case 'List':
       ret[vname] = [];
       var childs = value;
-      if (Array.isArray(childs)) {
+      if (Array.isArray(childs) && typeTree.childTypes.length == 1) {
         for (var c of childs) {
           var c = toSimpleData({
             vname: 'c',
@@ -154,13 +156,13 @@ function toSimpleData(node: any): any {
           ret[vname].push(c.c);
         }
       } else {
-        throw new TypeError('List item must is an array');
+        throw new TypeError('Invalid List node');
       }
       break;
     case 'Pair': {
       ret[vname] = {};
       var childs = value.arguments;
-      if (Array.isArray(childs) && childs.length == 2) {
+      if (Array.isArray(childs) && childs.length == 2 && typeTree.childTypes.length == 2) {
         var x = toSimpleData({
           vname: 'x',
           type: getTypeString(typeTree.childTypes[0]),
@@ -176,7 +178,7 @@ function toSimpleData(node: any): any {
         ret[vname].x = x.x;
         ret[vname].y = y.y;
       } else {
-        throw new TypeError('Map item must is an array');
+        throw new TypeError('Invalid Pair node');
       }
       break;
     }
@@ -191,7 +193,7 @@ function toSimpleData(node: any): any {
       ret[vname] = new BN(value);
       break;
     default:
-      ret[vname] = value;
+      throw new TypeError('Unhandle type ' + typeTree.type);
       break;
   }
   return ret;
@@ -216,23 +218,27 @@ function toStraightData(node: any): any {
       ret.value = value;
       break;
     case 'Option':
-      if (value['constructor'] == 'Some') {
-        var op = toStraightData({
-          vname: 'op',
-          type: getTypeString(typeTree.childTypes[0]),
-          value: value.arguments[0],
-        });
+      if(typeTree.childTypes.length == 1){
+        if (value['constructor'] == 'Some') {
+          var op = toStraightData({
+            vname: 'op',
+            type: getTypeString(typeTree.childTypes[0]),
+            value: value.arguments[0],
+          });
 
-        ret.value = op.value;
-      } else {
-        ret.value = '';
+          ret.value = op.value;
+        } else {
+          ret.value = '';
+        }
+      } else{
+        throw new TypeError('Invalid Option node');
       }
       break;
     case 'Map': {
       ret.value = {};
 
       var childs = value;
-      if (Array.isArray(childs)) {
+      if (Array.isArray(childs) && typeTree.childTypes.length == 2) {
         for (var c of childs) {
           var key = toStraightData({
             vname: 'key',
@@ -249,14 +255,14 @@ function toStraightData(node: any): any {
           ret.value[key.value] = val.value;
         }
       } else {
-        throw new TypeError('Map item must is an array');
+        throw new TypeError('Invalid Map node');
       }
       break;
     }
     case 'List':
       ret.value = [];
       var childs = value;
-      if (Array.isArray(childs)) {
+      if (Array.isArray(childs) && typeTree.childTypes.length == 1) {
         for (var c of childs) {
           var c = toStraightData({
             vname: 'c',
@@ -266,13 +272,13 @@ function toStraightData(node: any): any {
           ret.value.push(c.value);
         }
       } else {
-        throw new TypeError('List item must is an array');
+        throw new TypeError('Invalid List node');
       }
       break;
     case 'Pair': {
       ret.value = {};
       var childs = value.arguments;
-      if (Array.isArray(childs) && childs.length == 2) {
+      if (Array.isArray(childs) && childs.length == 2 && typeTree.childTypes.length == 2) {
         var x = toStraightData({
           vname: 'x',
           type: getTypeString(typeTree.childTypes[0]),
@@ -288,27 +294,28 @@ function toStraightData(node: any): any {
         ret.value.x = x.value;
         ret.value.y = y.value;
       } else {
-        throw new TypeError('Map item must is an array');
+        throw new TypeError('Invalid Pair node');
       }
       break;
     }
     case 'Uint32':
     case 'Int32':
-      ret[vname] = parseInt(value);
+      ret.value = parseInt(value);
       break;
     case 'Uint64':
     case 'Uint128':
     case 'Int64':
     case 'Int128':
-      ret.value = parseInt(value);
+      ret.value = new BN(value);
       break;
     default:
-      ret.value = value;
+      throw new TypeError('Unhandle type ' + typeTree.type);
       break;
   }
   return ret;
 }
 
+//New node with same type.
 function getEmptyData(node: any): any {
   if (isObject(node)) {
     return {};
@@ -318,6 +325,8 @@ function getEmptyData(node: any): any {
   return '';
 }
 
+//With each node is in scilla format, convert it to simple format.
+//The bStraight flag mean keep the sciila format in root node. It still have enough info to convert back to scilla format.
 function convertToSimpleJson(input: any, bStraight: boolean = false): any {
   var stackIns = [];
   var stackParents = [];
@@ -331,9 +340,19 @@ function convertToSimpleJson(input: any, bStraight: boolean = false): any {
   while (k < stackIns.length) {
     var curIn = stackIns[k];
 
-    if (isZilliqaData(curIn)) {
+    if (isScillaData(curIn)) {
       stackOuts[k] = bStraight ? toStraightData(curIn) : toSimpleData(curIn);
     } else if (isObject(curIn)) {
+      for (var p of input) {
+        var c = input[p];
+        stackIns.push(c);
+
+        stackOuts[k][p] = stackOuts.length; //index to out node.
+        var emptyData = getEmptyData(c);
+        stackOuts.push(emptyData);
+
+        stackParents.push(k);        
+      }
     } else if (Array.isArray(curIn)) {
       for (var p of input) {
         stackIns.push(p);
@@ -353,8 +372,9 @@ function convertToSimpleJson(input: any, bStraight: boolean = false): any {
   while (k >= 0) {
     var curIn = stackIns[k];
 
-    if (isZilliqaData(curIn)) {
+    if (isScillaData(curIn)) {
     } else if (isObject(curIn)) {
+      stackOuts[k][p] = stackOuts[stackOuts[k][p]];      
     } else if (Array.isArray(curIn)) {
       var mappable = {};
 
