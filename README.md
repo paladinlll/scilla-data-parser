@@ -23,10 +23,10 @@ var scillaJson = JSON.parse(`
   }
 `);
 
-var simpleJson = ScillaDataParser.convertToSimpleJson(input, false);
+var simpleJson = ScillaDataParser.convertToSimpleJson(scillaJson, false);
 //{ map2: { m: { x: 'k', y: 1 } } }
 
-var straightJson = ScillaDataParser.convertToSimpleJson(input, true);
+var straightJson = ScillaDataParser.convertToSimpleJson(scillaJson, true);
 //{ vname: 'map2',
 //  type: 'Map (String) (Pair (String) (Uint32))',
 //  value: { m: { x: 'k', y: 1 } } }

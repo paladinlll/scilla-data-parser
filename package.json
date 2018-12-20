@@ -1,6 +1,6 @@
 {
   "name": "scilla-data-parser",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Scilla data types can be very verbose, making it hard for developers to use the state directly. The parser will help developers can make references and manipulation to state more easily.",
   "main": "dist/parser.js",
   "types": "dist/parser.d.ts",
