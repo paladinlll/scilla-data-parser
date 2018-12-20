@@ -432,6 +432,7 @@ function toScillaBool(value: any): string{
 
   return ret ? "True" : "False";
 }
+
 function convertToScillaData(node: any): any {  
   var vname = node.vname;
   var type = node.type;
@@ -461,11 +462,11 @@ function convertToScillaData(node: any): any {
           });
 
           ret.value["constructor"] = "Some";
-          ret.value["argtypes"] = op.type;
+          ret.value["argtypes"] = [op.type];
           ret.value["arguments"] = [op.value];
         } else {
           ret.value["constructor"] = "None";
-          ret.value["argtypes"] = op.type;
+          ret.value["argtypes"] = [getTypeString(typeTree.childTypes[0])];
           ret.value["arguments"] = [];
         }
       } else{
@@ -522,13 +523,13 @@ function convertToScillaData(node: any): any {
       ret.value = {};
       var childs = value;
       if (isObject(childs) && typeTree.childTypes.length == 2) {
-        var x = toStraightData({
+        var x = convertToScillaData({
           vname: 'x',
           type: getTypeString(typeTree.childTypes[0]),
           value: childs.x,
         });
 
-        var y = toStraightData({
+        var y = convertToScillaData({
           vname: 'y',
           type: getTypeString(typeTree.childTypes[1]),
           value: childs.y,
