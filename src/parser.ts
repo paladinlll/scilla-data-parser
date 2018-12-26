@@ -190,6 +190,7 @@ function toSimpleData(node: any): any {
     case 'Uint128':
     case 'Int64':
     case 'Int128':
+	case 'BNum':
       ret[vname] = new BN(value);
       break;
     default:
@@ -306,6 +307,7 @@ function toStraightData(node: any): any {
     case 'Uint128':
     case 'Int64':
     case 'Int128':
+	case 'BNum':
       ret.value = new BN(value);
       break;
     default:
@@ -551,6 +553,7 @@ function convertToScillaData(node: any): any {
     case 'Uint128':
     case 'Int64':
     case 'Int128':
+	case 'BNum':
       ret.value = value.toString();
       break;
     default:
