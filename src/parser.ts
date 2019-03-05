@@ -1,4 +1,10 @@
-import {BN} from 'bn.js';
+import { BN } from 'bn.js';
+
+interface ICustomTypeRule {
+  argtypes: [any];
+}
+
+var customTypeMap = {};
 
 interface INodeType {
   type: string;
@@ -28,7 +34,7 @@ function parseTypeTree(strType: string): INodeType {
   while (i < strType.length) {
     switch (strType[i]) {
       case '(':
-        typeStack.push({type: '', childTypes: []});
+        typeStack.push({ type: '', childTypes: [] });
         if (typeCtx != null) {
           if (typeCtx.type == '') {
             typeCtx.type = subType;
@@ -62,7 +68,7 @@ function parseTypeTree(strType: string): INodeType {
     ++i;
   }
 
-  //In case root node has no child the node type is the input string.	
+  //In case root node has no child the node type is the input string.
   if (typeStack[0].childTypes.length == 0) {
     typeStack[0].type = strType;
   }
@@ -102,7 +108,7 @@ function toSimpleData(node: any): any {
       ret[vname] = value;
       break;
     case 'Option':
-      if(typeTree.childTypes.length == 1){
+      if (typeTree.childTypes.length == 1) {
         if (value['constructor'] == 'Some') {
           var op = toSimpleData({
             vname: 'op',
@@ -114,7 +120,7 @@ function toSimpleData(node: any): any {
         } else {
           ret[vname] = '';
         }
-      } else{
+      } else {
         throw new TypeError('Invalid Option node');
       }
       break;
@@ -188,13 +194,35 @@ function toSimpleData(node: any): any {
       break;
     case 'Uint64':
     case 'Uint128':
+    case 'Uint256':
     case 'Int64':
     case 'Int128':
-	case 'BNum':
+    case 'Uint256':
+    case 'BNum':
       ret[vname] = new BN(value);
       break;
     default:
-      throw new TypeError('Unhandle type ' + typeTree.type);
+      if (customTypeMap[typeTree.type] != null) {
+        ret[vname] = {};
+
+        var rule: ICustomTypeRule = customTypeMap[typeTree.type];
+        var childs = value.arguments;
+        if (Array.isArray(childs) && childs.length == rule.argtypes.length) {
+          for (let k = 0; k < rule.argtypes.length; k++) {
+            var rname = rule.argtypes[k]['vname'];
+            var rtype = rule.argtypes[k]['type'];
+            ret[vname][rname] = toSimpleData({
+              vname: rname,
+              type: rtype,
+              value: childs[k],
+            })[rname];
+          }
+        } else {
+          throw new TypeError('Invalid Custom node');
+        }
+      } else {
+        throw new TypeError('Unhandle type ' + typeTree.type);
+      }
       break;
   }
   return ret;
@@ -219,7 +247,7 @@ function toStraightData(node: any): any {
       ret.value = value;
       break;
     case 'Option':
-      if(typeTree.childTypes.length == 1){
+      if (typeTree.childTypes.length == 1) {
         if (value['constructor'] == 'Some') {
           var op = toStraightData({
             vname: 'op',
@@ -231,7 +259,7 @@ function toStraightData(node: any): any {
         } else {
           ret.value = '';
         }
-      } else{
+      } else {
         throw new TypeError('Invalid Option node');
       }
       break;
@@ -305,13 +333,35 @@ function toStraightData(node: any): any {
       break;
     case 'Uint64':
     case 'Uint128':
+    case 'Uint256':
     case 'Int64':
     case 'Int128':
-	case 'BNum':
+    case 'Uint256':
+    case 'BNum':
       ret.value = new BN(value);
       break;
     default:
-      throw new TypeError('Unhandle type ' + typeTree.type);
+      if (customTypeMap[typeTree.type] != null) {
+        ret.value = {};
+
+        var rule: ICustomTypeRule = customTypeMap[typeTree.type];
+        var childs = value.arguments;
+        if (Array.isArray(childs) && childs.length == rule.argtypes.length) {
+          for (let k = 0; k < rule.argtypes.length; k++) {
+            var rname = rule.argtypes[k]['vname'];
+            var rtype = rule.argtypes[k]['type'];
+            ret.value[rname] = toStraightData({
+              vname: rname,
+              type: rtype,
+              value: childs[k],
+            }).value;
+          }
+        } else {
+          throw new TypeError('Invalid Custom node');
+        }
+      } else {
+        throw new TypeError('Unhandle type ' + typeTree.type);
+      }
       break;
   }
   return ret;
@@ -353,7 +403,7 @@ function convertToSimpleJson(input: any, bStraight: boolean = false): any {
         var emptyData = getEmptyData(c);
         stackOuts.push(emptyData);
 
-        stackParents.push(k);        
+        stackParents.push(k);
       }
     } else if (Array.isArray(curIn)) {
       for (let p of curIn) {
@@ -412,30 +462,30 @@ function convertToSimpleJson(input: any, bStraight: boolean = false): any {
 }
 
 function isFloat(n) {
-  return n === +n && n !== (n|0);
+  return n === +n && n !== (n | 0);
 }
 
 function isInteger(n) {
-  return n === +n && n === (n|0);
+  return n === +n && n === (n | 0);
 }
 
-function toScillaBool(value: any): string{
+function toScillaBool(value: any): string {
   var ret = false;
 
-  if (typeof value === 'boolean'){
+  if (typeof value === 'boolean') {
     ret = value;
-  } else if (typeof value === 'string'){ 
-    ret = (value.toLowerCase() == "true");
-  } else if (isInteger(value)){
-    ret = (parseInt(value) != 0);
+  } else if (typeof value === 'string') {
+    ret = value.toLowerCase() == 'true';
+  } else if (isInteger(value)) {
+    ret = parseInt(value) != 0;
   } else {
     ret = false;
   }
 
-  return ret ? "True" : "False";
+  return ret ? 'True' : 'False';
 }
 
-function convertToScillaData(node: any): any {  
+function convertToScillaData(node: any): any {
   var vname = node.vname;
   var type = node.type;
   var value = node.value;
@@ -447,7 +497,7 @@ function convertToScillaData(node: any): any {
   var typeTree = parseTypeTree(type);
   switch (typeTree.type) {
     case 'Bool':
-      ret.value = { "constructor": toScillaBool(value), "argtypes": [], "arguments": [] };
+      ret.value = { constructor: toScillaBool(value), argtypes: [], arguments: [] };
       break;
     case 'String':
     case 'ByStr20':
@@ -455,7 +505,7 @@ function convertToScillaData(node: any): any {
       break;
     case 'Option':
       ret.value = {};
-      if(typeTree.childTypes.length == 1){        
+      if (typeTree.childTypes.length == 1) {
         if (value != null && value != '') {
           var op = convertToScillaData({
             vname: 'op',
@@ -463,15 +513,15 @@ function convertToScillaData(node: any): any {
             value: value,
           });
 
-          ret.value["constructor"] = "Some";
-          ret.value["argtypes"] = [op.type];
-          ret.value["arguments"] = [op.value];
+          ret.value['constructor'] = 'Some';
+          ret.value['argtypes'] = [op.type];
+          ret.value['arguments'] = [op.value];
         } else {
-          ret.value["constructor"] = "None";
-          ret.value["argtypes"] = [getTypeString(typeTree.childTypes[0])];
-          ret.value["arguments"] = [];
+          ret.value['constructor'] = 'None';
+          ret.value['argtypes'] = [getTypeString(typeTree.childTypes[0])];
+          ret.value['arguments'] = [];
         }
-      } else{
+      } else {
         throw new TypeError('Invalid Option node');
       }
       break;
@@ -494,17 +544,16 @@ function convertToScillaData(node: any): any {
           });
 
           ret.value.push({
-            "key": key.value,
-            "val": val.value
-          });          
+            key: key.value,
+            val: val.value,
+          });
         }
       } else {
         throw new TypeError('Invalid Map node');
       }
       break;
     }
-    case 'List':
-    {
+    case 'List': {
       ret.value = [];
       var childs = value;
       if (Array.isArray(childs) && typeTree.childTypes.length == 1) {
@@ -537,9 +586,9 @@ function convertToScillaData(node: any): any {
           value: childs.y,
         });
 
-        ret.value["constructor"] = "Pair";
-        ret.value["argtypes"] = [x.type, y.type];
-        ret.value["arguments"] = [x.value, y.value];        
+        ret.value['constructor'] = 'Pair';
+        ret.value['argtypes'] = [x.type, y.type];
+        ret.value['arguments'] = [x.value, y.value];
       } else {
         throw new TypeError('Invalid Pair node');
       }
@@ -551,9 +600,11 @@ function convertToScillaData(node: any): any {
       break;
     case 'Uint64':
     case 'Uint128':
+    case 'Uint256':
     case 'Int64':
     case 'Int128':
-	case 'BNum':
+    case 'Uint256':
+    case 'BNum':
       ret.value = value.toString();
       break;
     default:
@@ -568,7 +619,7 @@ function convertToScillaDataList(input: any): any {
 
   if (Array.isArray(input)) {
     for (let p of input) {
-      if (isScillaData(p)){
+      if (isScillaData(p)) {
         ret.push(convertToScillaData(p));
       } else {
         throw new TypeError('Invalid scilla node');
@@ -579,8 +630,13 @@ function convertToScillaDataList(input: any): any {
   return ret;
 }
 
+function fetchCustomData(name, rule): any {
+  customTypeMap[name] = rule;
+}
+
 export const ScillaDataParser = {
   convertToSimpleJson,
   convertToScillaData,
-  convertToScillaDataList
+  convertToScillaDataList,
+  fetchCustomData,
 };

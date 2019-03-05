@@ -1,4 +1,4 @@
-import {ScillaDataParser} from '../parser';
+import { ScillaDataParser } from '../parser';
 
 var scillaJson = JSON.parse(`
   {

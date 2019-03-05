@@ -1,5 +1,4 @@
-import {ScillaDataParser} from '../parser';
-
+import { ScillaDataParser } from '../parser';
 
 //The expected object is sorted, so the test map input must is in correct order.
 var scillaJson = JSON.parse(`

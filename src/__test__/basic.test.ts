@@ -1,4 +1,4 @@
-import {ScillaDataParser} from '../parser';
+import { ScillaDataParser } from '../parser';
 
 //This case used an array as input so we'll use convertToScillaDataList to revert back to list scilla data.
 var scillaJson = JSON.parse(`
@@ -15,7 +15,7 @@ var scillaJson = JSON.parse(`
 `);
 
 test('basic', () => {
-  var straightJson = ScillaDataParser.convertToSimpleJson(scillaJson, true);  
+  var straightJson = ScillaDataParser.convertToSimpleJson(scillaJson, true);
   var revertScillaJson = ScillaDataParser.convertToScillaDataList(straightJson);
   expect(revertScillaJson).toMatchObject(scillaJson);
 });
