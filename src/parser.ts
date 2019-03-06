@@ -1,4 +1,3 @@
-import { BN } from 'bn.js';
 
 interface ICustomTypeRule {
   argtypes: [any];
@@ -197,9 +196,9 @@ function toSimpleData(node: any): any {
     case 'Uint256':
     case 'Int64':
     case 'Int128':
-    case 'Uint256':
+    case 'Int256':
     case 'BNum':
-      ret[vname] = new BN(value);
+      ret[vname] = value;
       break;
     default:
       if (customTypeMap[typeTree.type] != null) {
@@ -336,9 +335,9 @@ function toStraightData(node: any): any {
     case 'Uint256':
     case 'Int64':
     case 'Int128':
-    case 'Uint256':
+    case 'Int256':
     case 'BNum':
-      ret.value = new BN(value);
+      ret.value = value;
       break;
     default:
       if (customTypeMap[typeTree.type] != null) {
@@ -603,7 +602,7 @@ function convertToScillaData(node: any): any {
     case 'Uint256':
     case 'Int64':
     case 'Int128':
-    case 'Uint256':
+    case 'Int256':
     case 'BNum':
       ret.value = value.toString();
       break;

@@ -1,4 +1,6 @@
-
+## Note
+* Support convert Custom type data but can't revert back to scilla format (because contract did't accept this type in parameters)
+* The BN type was be convert to string (because it was be automatic converted when used in Map key, use same rule for reduce complex)
 ## Install
 `npm install --save scilla-data-parser`
 
@@ -35,4 +37,63 @@ var straightJson = ScillaDataParser.convertToSimpleJson(scillaJson, true);
 var revertScillaJson = ScillaDataParser.convertToScillaData(straightJson);
 //Same as scillaJson
 
+```
+
+
+```js
+var scillaCustomJson = JSON.parse(`
+{
+    "type": "Map (Uint256) (Product)",
+    "value": [
+      {
+        "key": "168430090",
+        "val": {
+          "argtypes": [],
+          "arguments": [
+            "168430090",
+            "1000000000",
+            "100",
+            "1000",
+            "0",
+            "0",
+            {
+              "argtypes": [],
+              "arguments": [],
+              "constructor": "False"
+            }
+          ],
+          "constructor": "Product"
+        }
+      }
+    ],
+    "vname": "productsMap"
+}`);
+
+ScillaDataParser.fetchCustomData('Product', {
+	argtypes: [
+		{ vname: 'id', type: 'Uint256' },
+		{ vname: 'price', type: 'Uint128' },
+		{ vname: 'available', type: 'Uint128' },
+		{ vname: 'supply', type: 'Uint128' },
+		{ vname: 'sold', type: 'Uint128' },
+		{ vname: 'interval', type: 'Uint128' },
+		{ vname: 'renewable', type: 'Bool' },
+	],
+});
+ScillaDataParser.convertToSimpleJson(scillaCustomJson, true);
+//{
+//  "vname": "productsMap",
+//  "type": "Map (Uint256) (Product)",
+//  "value": {
+//    "168430090": {
+//      "id": "168430090",
+//      "price": "1000000000",
+//      "available": "100",
+//      "supply": "1000",
+//      "sold": "0",
+//      "interval": "0",
+//      "renewable": false
+//    }
+//}
+}
 ```
